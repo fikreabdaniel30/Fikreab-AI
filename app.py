@@ -6,7 +6,7 @@ from fpdf import FPDF
 from io import BytesIO
 import time
 
-# --- PAGE CONFIGURATION ---
+# --- 1. PAGE CONFIGURATION ---
 st.set_page_config(
     page_title="Fikreab AI | Ultimate Study Companion",
     page_icon="🎓",
@@ -14,75 +14,37 @@ st.set_page_config(
     initial_sidebar_state="expanded"
 )
 
-# --- ADVANCED CUSTOM CSS (10/10 DESIGN) ---
+# --- 2. ADVANCED CUSTOM CSS (10/10 DESIGN) ---
 st.markdown("""
     <style>
-    /* Main Background Gradient */
-    .stApp {
-        background: radial-gradient(circle at top right, #1e2127, #0e1117);
-        color: #ffffff;
-    }
-    
-    /* Custom Header Banner */
+    .stApp { background: radial-gradient(circle at top right, #1e2127, #0e1117); color: #ffffff; }
     .header-banner {
         background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
-        padding: 30px;
-        border-radius: 20px;
-        text-align: center;
-        margin-bottom: 30px;
+        padding: 30px; border-radius: 20px; text-align: center; margin-bottom: 30px;
         box-shadow: 0 10px 30px rgba(0, 201, 255, 0.2);
     }
-    .header-banner h1 {
-        color: #000 !important;
-        margin: 0;
-        font-weight: 800;
-        font-size: 3rem;
-    }
-    
-    /* Smart Card Containers */
+    .header-banner h1 { color: #000 !important; margin: 0; font-weight: 800; font-size: 3rem; }
     .css-card {
-        border-radius: 15px;
-        padding: 25px;
-        background-color: rgba(255, 255, 255, 0.05);
-        backdrop-filter: blur(12px);
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        margin-bottom: 20px;
-        transition: transform 0.3s ease;
+        border-radius: 15px; padding: 25px; background-color: rgba(255, 255, 255, 0.05);
+        backdrop-filter: blur(12px); border: 1px solid rgba(255, 255, 255, 0.1); margin-bottom: 20px;
     }
-    .css-card:hover {
-        border: 1px solid #00e5ff;
-    }
-    
-    /* Better Button Design */
     .stButton>button {
-        width: 100%;
-        border-radius: 12px;
-        height: 3.5em;
+        width: 100%; border-radius: 12px; height: 3.5em;
         background: linear-gradient(90deg, #00C9FF 0%, #92FE9D 100%);
-        color: #000 !important;
-        font-weight: bold;
-        text-transform: uppercase;
-        letter-spacing: 1px;
-        border: none;
-        box-shadow: 0 4px 15px rgba(0, 201, 255, 0.3);
+        color: #000 !important; font-weight: bold; text-transform: uppercase;
+        letter-spacing: 1px; border: none;
     }
-
-    /* Sidebar Styling */
-    [data-testid="stSidebar"] {
-        background-color: #0a0c10;
-        border-right: 1px solid rgba(255, 255, 255, 0.1);
-    }
+    [data-testid="stSidebar"] { background-color: #0a0c10; border-right: 1px solid rgba(255, 255, 255, 0.1); }
     </style>
     """, unsafe_allow_html=True)
 
-# --- EXPORT LOGIC ---
+# --- 3. EXPORT LOGIC ---
 def get_docx(text):
     doc = Document()
     doc.add_heading('Fikreab AI Study Notes', 0)
     clean_text = text.replace('**', '').replace('#', '')
     for paragraph in clean_text.split('\n'):
-        if paragraph.strip():
-            doc.add_paragraph(paragraph)
+        if paragraph.strip(): doc.add_paragraph(paragraph)
     buffer = BytesIO()
     doc.save(buffer)
     buffer.seek(0)
@@ -92,62 +54,44 @@ def get_pdf(text):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
-    # Filter non-latin characters for PDF stability
     safe_text = "".join(i for i in text if ord(i) < 128)
     clean_text = safe_text.replace('**', '').replace('#', '')
     for line in clean_text.split('\n'):
         pdf.multi_cell(0, 10, txt=line)
     return pdf.output(dest='S').encode('latin-1', 'ignore')
 
-# --- AI CONFIG (THE FIXED SECTION) ---
-# Initialize model as None so it doesn't crash the UI if the key is bad
+# --- 4. AI CONFIG (FIXED FOR 400 & 404 ERRORS) ---
 model = None
-
 if "GEMINI_API_KEY" in st.secrets:
     try:
-        # .strip() is essential to fix the 400 error caused by spaces
-        api_key = st.secrets["GEMINI_API_KEY"].strip() 
+        # .strip() handles the "API Key Invalid" Error 400 from your screenshot
+        api_key = st.secrets["GEMINI_API_KEY"].strip()
         genai.configure(api_key=api_key)
         
-        # Check which model is available to avoid 404/400 errors
-        # In 2026, some users need gemini-2.0-flash or gemini-flash-latest
-        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_actions]
-        
-        # We try to find the best available model automatically
-        target_models = ['models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-pro']
-        selected_model = next((m for m in target_models if m in available_models), available_models[0])
-        
-        model = genai.GenerativeModel(selected_model)
+        # Auto-detects the best model to fix "Model Not Found" Error 404
+        available = [m.name for m in genai.list_models() if 'generateContent' in m.supported_actions]
+        target = 'models/gemini-1.5-flash' if 'models/gemini-1.5-flash' in available else available[0]
+        model = genai.GenerativeModel(target)
     except Exception as e:
-        st.error(f"⚠️ Connection Error: {e}")
+        st.error(f"Setup Error: {e}")
 else:
-    st.sidebar.error("❌ GEMINI_API_KEY missing in Secrets!")
+    st.error("❌ GEMINI_API_KEY not found in Secrets!")
 
-# --- SIDEBAR & MODES ---
+# --- 5. SIDEBAR & MODES ---
 with st.sidebar:
     st.image("https://cdn-icons-png.flaticon.com/512/4712/4712035.png", width=80)
     st.title("Fikreab AI")
     st.markdown("---")
-    
-    st.subheader("🧠 Smart AI Modes")
-    ai_mode = st.selectbox(
-        "Select Action:",
-        ["📝 Comprehensive Notes", "🗂️ Flashcard Set", "📉 Key Points Only", "🎯 Exam Predictions"]
-    )
-    
+    ai_mode = st.selectbox("Select Action:", ["📝 Comprehensive Notes", "🗂️ Flashcard Set", "📉 Key Points Only", "🎯 Exam Predictions"])
     uploaded_file = st.file_uploader("Upload PDF Material", type="pdf")
-    if uploaded_file:
-        st.success("✅ Document Loaded")
 
-# --- MAIN INTERFACE ---
+# --- 6. MAIN INTERFACE ---
 st.markdown('<div class="header-banner"><h1>🎓 FIKREAB AI STUDIO</h1><p style="color:black;">Advanced Academic Intelligence</p></div>', unsafe_allow_html=True)
 
 if uploaded_file:
-    # PDF Processing
     with st.status("🛠️ Analyzing Document...", expanded=False) as status:
         reader = PdfReader(uploaded_file)
-        # We limit the text to 30,000 chars to avoid "Argument too large" errors
-        text_content = "".join([page.extract_text() for page in reader.pages])[:30000]
+        text_content = "".join([page.extract_text() for page in reader.pages])[:25000]
         status.update(label="✅ Knowledge Base Ready", state="complete")
 
     tab1, tab2 = st.tabs(["🚀 Study Generator", "🧠 Interactive Quiz"])
@@ -161,54 +105,44 @@ if uploaded_file:
         with col2:
             if generate_btn:
                 if model:
-                    with st.spinner(f"⏳ Generating {ai_mode}... please wait."):
+                    with st.spinner(f"⏳ Generating {ai_mode}..."):
                         prompts = {
-                            "📝 Comprehensive Notes": "Create structured study notes with headers, tables, and explanations.",
-                            "🗂️ Flashcard Set": "Create a list of Front: [Term] and Back: [Definition] pairs.",
-                            "📉 Key Points Only": "Summarize the text into high-impact bullet points only.",
-                            "🎯 Exam Predictions": "Identify the 5 most likely exam topics and write a sample question for each."
+                            "📝 Comprehensive Notes": "Detailed study notes with headers.",
+                            "🗂️ Flashcard Set": "Term: Definition pairs.",
+                            "📉 Key Points Only": "Bullet points only.",
+                            "🎯 Exam Predictions": "Top 5 topics and questions."
                         }
-                        
                         try:
                             response = model.generate_content(f"{prompts[ai_mode]} Content: {text_content}")
                             st.session_state['output'] = response.text
-                            st.toast("Generation Complete!", icon="✅")
+                            st.toast("Success!", icon="✅")
                         except Exception as e:
+                            # This handles the "Quota Exceeded" Error 429 from your screenshot
                             st.error(f"API Error: {e}")
                 else:
-                    st.error("Model not initialized. Please check your API key.")
+                    st.error("Model initialization failed.")
 
             if 'output' in st.session_state:
                 st.markdown("<div class='css-card'>", unsafe_allow_html=True)
                 st.markdown(st.session_state['output'])
                 st.markdown("</div>", unsafe_allow_html=True)
-                
-                # Professional Download Section
                 st.write("### 📥 Export Options")
-                d_col1, d_col2 = st.columns(2)
-                with d_col1:
-                    st.download_button("📄 Export PDF", get_pdf(st.session_state['output']), "Fikreab_AI_Notes.pdf", "application/pdf")
-                with d_col2:
-                    st.download_button("📝 Export Word", get_docx(st.session_state['output']), "Fikreab_AI_Notes.docx")
+                d1, d2 = st.columns(2)
+                with d1: st.download_button("📄 Export PDF", get_pdf(st.session_state['output']), "Notes.pdf")
+                with d2: st.download_button("📝 Export Word", get_docx(st.session_state['output']), "Notes.docx")
 
     with tab2:
         st.markdown("### ❓ Quiz Engine")
         if st.button("🎯 Generate Random Quiz"):
             if model:
-                with st.spinner("⏳ Crafting questions..."):
+                with st.spinner("⏳ Crafting..."):
                     try:
-                        resp = model.generate_content(f"Create a 5-question multiple choice quiz with answers at the end for: {text_content}")
+                        resp = model.generate_content(f"Create a 5-question quiz for: {text_content}")
                         st.session_state['quiz'] = resp.text
-                    except Exception as e:
-                        st.error(f"Quiz Error: {e}")
-            else:
-                st.error("Model not ready.")
-        
+                    except Exception as e: st.error(f"Quiz Error: {e}")
+
         if 'quiz' in st.session_state:
             st.markdown(f"<div class='css-card'>{st.session_state['quiz']}</div>", unsafe_allow_html=True)
 
 else:
-    # 10/10 Empty State
-    st.markdown("""
-    <div style='text-align: center; padding: 60px;'>
-        <h2 style='color: #00e5ff;'>Ready to upgrade
+    st.markdown("<div style='text-align: center; padding: 60px;'><h2 style='color: #00e5ff;'>Ready to upgrade?</h2><p>Upload PDF to begin.</p></div>", unsafe_allow_html=True)
