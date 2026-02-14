@@ -111,7 +111,7 @@ if "GEMINI_API_KEY" in st.secrets:
         # In 2026, many accounts use gemini-1.5-flash or gemini-2.0-flash
         target_models = ['models/gemini-1.5-flash', 'models/gemini-2.0-flash', 'models/gemini-pro']
         selected_model = next((m for m in target_models if m in available_models), available_models[0])
-        model = genai.GenerativeModel(selected_model)
+        model = genai.GenerativeModel('gemini-1.5-flash')
     except Exception as e:
         st.error(f"Setup Error: {e}")
 else:
@@ -208,4 +208,5 @@ else:
         <div style='font-size: 5rem;'>📚</div>
     </div>
     """, unsafe_allow_html=True)
+
 
