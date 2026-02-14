@@ -92,25 +92,36 @@ def get_pdf(text):
     pdf = FPDF()
     pdf.add_page()
     pdf.set_font("Arial", size=12)
+    # Filter non-latin characters for PDF stability
     safe_text = "".join(i for i in text if ord(i) < 128)
     clean_text = safe_text.replace('**', '').replace('#', '')
     for line in clean_text.split('\n'):
         pdf.multi_cell(0, 10, txt=line)
-    return pdf.output(dest='S').encode('latin-1')
+    return pdf.output(dest='S').encode('latin-1', 'ignore')
 
-# --- AI CONFIG ---
+# --- AI CONFIG (THE FIXED SECTION) ---
+# Initialize model as None so it doesn't crash the UI if the key is bad
+model = None
+
 if "GEMINI_API_KEY" in st.secrets:
-    # .strip() removes any accidental spaces you might have pasted
-    api_key = st.secrets["GEMINI_API_KEY"].strip() 
-    genai.configure(api_key=api_key)
-    
-    # Try the most stable model name
     try:
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        # .strip() is essential to fix the 400 error caused by spaces
+        api_key = st.secrets["GEMINI_API_KEY"].strip() 
+        genai.configure(api_key=api_key)
+        
+        # Check which model is available to avoid 404/400 errors
+        # In 2026, some users need gemini-2.0-flash or gemini-flash-latest
+        available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_actions]
+        
+        # We try to find the best available model automatically
+        target_models = ['models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-pro']
+        selected_model = next((m for m in target_models if m in available_models), available_models[0])
+        
+        model = genai.GenerativeModel(selected_model)
     except Exception as e:
-        st.error(f"Model Error: {e}")
+        st.error(f"⚠️ Connection Error: {e}")
 else:
-    st.error("❌ GEMINI_API_KEY not found in Streamlit Secrets!")
+    st.sidebar.error("❌ GEMINI_API_KEY missing in Secrets!")
 
 # --- SIDEBAR & MODES ---
 with st.sidebar:
@@ -135,7 +146,8 @@ if uploaded_file:
     # PDF Processing
     with st.status("🛠️ Analyzing Document...", expanded=False) as status:
         reader = PdfReader(uploaded_file)
-        text_content = "".join([page.extract_text() for page in reader.pages])
+        # We limit the text to 30,000 chars to avoid "Argument too large" errors
+        text_content = "".join([page.extract_text() for page in reader.pages])[:30000]
         status.update(label="✅ Knowledge Base Ready", state="complete")
 
     tab1, tab2 = st.tabs(["🚀 Study Generator", "🧠 Interactive Quiz"])
@@ -148,21 +160,23 @@ if uploaded_file:
         
         with col2:
             if generate_btn:
-                # Speed Feedback Loop
-                with st.spinner(f"⏳ Generating {ai_mode}... please wait."):
-                    prompts = {
-                        "📝 Comprehensive Notes": "Create structured study notes with headers, tables, and explanations.",
-                        "🗂️ Flashcard Set": "Create a list of Front: [Term] and Back: [Definition] pairs.",
-                        "📉 Key Points Only": "Summarize the text into high-impact bullet points only.",
-                        "🎯 Exam Predictions": "Identify the 5 most likely exam topics and write a sample question for each."
-                    }
-                    
-                    try:
-                        response = model.generate_content(f"{prompts[ai_mode]} Content: {text_content[:30000]}")
-                        st.session_state['output'] = response.text
-                        st.toast("Generation Complete!", icon="✅")
-                    except Exception as e:
-                        st.error(f"API Error: {e}")
+                if model:
+                    with st.spinner(f"⏳ Generating {ai_mode}... please wait."):
+                        prompts = {
+                            "📝 Comprehensive Notes": "Create structured study notes with headers, tables, and explanations.",
+                            "🗂️ Flashcard Set": "Create a list of Front: [Term] and Back: [Definition] pairs.",
+                            "📉 Key Points Only": "Summarize the text into high-impact bullet points only.",
+                            "🎯 Exam Predictions": "Identify the 5 most likely exam topics and write a sample question for each."
+                        }
+                        
+                        try:
+                            response = model.generate_content(f"{prompts[ai_mode]} Content: {text_content}")
+                            st.session_state['output'] = response.text
+                            st.toast("Generation Complete!", icon="✅")
+                        except Exception as e:
+                            st.error(f"API Error: {e}")
+                else:
+                    st.error("Model not initialized. Please check your API key.")
 
             if 'output' in st.session_state:
                 st.markdown("<div class='css-card'>", unsafe_allow_html=True)
@@ -180,9 +194,15 @@ if uploaded_file:
     with tab2:
         st.markdown("### ❓ Quiz Engine")
         if st.button("🎯 Generate Random Quiz"):
-            with st.spinner("⏳ Crafting questions..."):
-                resp = model.generate_content(f"Create a 5-question multiple choice quiz with answers at the end for: {text_content[:20000]}")
-                st.session_state['quiz'] = resp.text
+            if model:
+                with st.spinner("⏳ Crafting questions..."):
+                    try:
+                        resp = model.generate_content(f"Create a 5-question multiple choice quiz with answers at the end for: {text_content}")
+                        st.session_state['quiz'] = resp.text
+                    except Exception as e:
+                        st.error(f"Quiz Error: {e}")
+            else:
+                st.error("Model not ready.")
         
         if 'quiz' in st.session_state:
             st.markdown(f"<div class='css-card'>{st.session_state['quiz']}</div>", unsafe_allow_html=True)
@@ -191,9 +211,4 @@ else:
     # 10/10 Empty State
     st.markdown("""
     <div style='text-align: center; padding: 60px;'>
-        <h2 style='color: #00e5ff;'>Ready to upgrade your grades?</h2>
-        <p>Upload your PDF in the sidebar to begin the AI transformation.</p>
-        <div style='font-size: 5rem;'>📚</div>
-    </div>
-    """, unsafe_allow_html=True)
-
+        <h2 style='color: #00e5ff;'>Ready to upgrade
