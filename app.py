@@ -224,7 +224,3 @@ else:
         <p style='opacity: 0.7;'>Upload a PDF to unlock the ultimate study experience.</p>
     </div>
     """, unsafe_allow_html=True)
-
-
-
-
