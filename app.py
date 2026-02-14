@@ -89,7 +89,7 @@ except Exception as e:
     st.error(f"Configuration Error: {e}")
 
 # Use a standard stable model
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- SESSION STATE MANAGEMENT ---
 if 'generated_notes' not in st.session_state:
@@ -251,3 +251,4 @@ else:
         <p style='font-size: 0.8em; color: gray;'>Supports PDF files up to 200MB</p>
     </div>
     """, unsafe_allow_html=True)
+
