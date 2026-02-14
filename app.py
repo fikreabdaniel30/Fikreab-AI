@@ -100,8 +100,17 @@ def get_pdf(text):
 
 # --- AI CONFIG ---
 if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel('gemini-1.5-flash')
+    # .strip() removes any accidental spaces you might have pasted
+    api_key = st.secrets["GEMINI_API_KEY"].strip() 
+    genai.configure(api_key=api_key)
+    
+    # Try the most stable model name
+    try:
+        model = genai.GenerativeModel('gemini-1.5-flash')
+    except Exception as e:
+        st.error(f"Model Error: {e}")
+else:
+    st.error("❌ GEMINI_API_KEY not found in Streamlit Secrets!")
 
 # --- SIDEBAR & MODES ---
 with st.sidebar:
@@ -187,3 +196,4 @@ else:
         <div style='font-size: 5rem;'>📚</div>
     </div>
     """, unsafe_allow_html=True)
+
