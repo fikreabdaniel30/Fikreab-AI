@@ -98,24 +98,24 @@ def get_pdf(text):
         pdf.multi_cell(0, 10, txt=line)
     return pdf.output(dest='S').encode('latin-1', 'ignore')
 
-# --- 4. AI CONFIG (THE FIXED SECTION) ---
+# --- 4. AI CONFIG (FIXED FOR 400 & 404 ERRORS) ---
 model = None
 if "GEMINI_API_KEY" in st.secrets:
     try:
-        # .strip() handles Error 400 caused by accidental spaces in secrets
-        api_key = st.secrets["GEMINI_API_KEY"].strip() 
+        # .strip() handles the "API Key Invalid" Error 400 from your screenshot
+        api_key = st.secrets["GEMINI_API_KEY"].strip()
         genai.configure(api_key=api_key)
         
-        # Dynamically list and select best available model to fix Error 404
+        # Auto-detects available models to fix the "Model Not Found" Error 404
         available_models = [m.name for m in genai.list_models() if 'generateContent' in m.supported_actions]
-        # In 2026, many accounts use gemini-flash-latest or gemini-2.5-flash
-        target_list = ['models/gemini-2.0-flash', 'models/gemini-1.5-flash', 'models/gemini-pro']
-        selected = next((m for m in target_list if m in available_models), available_models[0])
-        model = genai.GenerativeModel(selected)
+        # In 2026, many accounts use gemini-1.5-flash or gemini-2.0-flash
+        target_models = ['models/gemini-1.5-flash', 'models/gemini-2.0-flash', 'models/gemini-pro']
+        selected_model = next((m for m in target_models if m in available_models), available_models[0])
+        model = genai.GenerativeModel(selected_model)
     except Exception as e:
-        st.error(f"⚠️ Setup Error: {e}")
+        st.error(f"Setup Error: {e}")
 else:
-    st.sidebar.error("❌ GEMINI_API_KEY missing in Secrets!")
+    st.sidebar.error("❌ GEMINI_API_KEY not found in Secrets!")
 
 # --- 5. SIDEBAR & MODES ---
 with st.sidebar:
@@ -140,10 +140,71 @@ if uploaded_file:
     # PDF Processing
     with st.status("🛠️ Analyzing Document...", expanded=False) as status:
         reader = PdfReader(uploaded_file)
-        # Limit text to avoid "Argument too large" 400 errors
+        # Limit text to avoid "Argument too large" errors
         text_content = "".join([page.extract_text() for page in reader.pages])[:30000]
         status.update(label="✅ Knowledge Base Ready", state="complete")
 
     tab1, tab2 = st.tabs(["🚀 Study Generator", "🧠 Interactive Quiz"])
 
-    with tab1
+    with tab1:
+        col1, col2 = st.columns([1, 2])
+        with col1:
+            st.markdown(f"### 📍 Current Mode: \n**{ai_mode}**")
+            generate_btn = st.button("✨ START GENERATION")
+        
+        with col2:
+            if generate_btn:
+                if model:
+                    with st.spinner(f"⏳ Generating {ai_mode}... please wait."):
+                        prompts = {
+                            "📝 Comprehensive Notes": "Create structured study notes with headers, tables, and explanations.",
+                            "🗂️ Flashcard Set": "Create a list of Front: [Term] and Back: [Definition] pairs.",
+                            "📉 Key Points Only": "Summarize the text into high-impact bullet points only.",
+                            "🎯 Exam Predictions": "Identify the 5 most likely exam topics and write a sample question for each."
+                        }
+                        
+                        try:
+                            response = model.generate_content(f"{prompts[ai_mode]} Content: {text_content}")
+                            st.session_state['output'] = response.text
+                            st.toast("Generation Complete!", icon="✅")
+                        except Exception as e:
+                            st.error(f"API Error: {e}")
+                else:
+                    st.error("AI Model not initialized. Check your API key.")
+
+            if 'output' in st.session_state:
+                st.markdown("<div class='css-card'>", unsafe_allow_html=True)
+                st.markdown(st.session_state['output'])
+                st.markdown("</div>", unsafe_allow_html=True)
+                
+                # Professional Download Section
+                st.write("### 📥 Export Options")
+                d_col1, d_col2 = st.columns(2)
+                with d_col1:
+                    st.download_button("📄 Export PDF", get_pdf(st.session_state['output']), "Fikreab_AI_Notes.pdf", "application/pdf")
+                with d_col2:
+                    st.download_button("📝 Export Word", get_docx(st.session_state['output']), "Fikreab_AI_Notes.docx")
+
+    with tab2:
+        st.markdown("### ❓ Quiz Engine")
+        if st.button("🎯 Generate Random Quiz"):
+            if model:
+                with st.spinner("⏳ Crafting questions..."):
+                    try:
+                        resp = model.generate_content(f"Create a 5-question multiple choice quiz with answers at the end for: {text_content}")
+                        st.session_state['quiz'] = resp.text
+                    except Exception as e:
+                        st.error(f"Quiz Error: {e}")
+        
+        if 'quiz' in st.session_state:
+            st.markdown(f"<div class='css-card'>{st.session_state['quiz']}</div>", unsafe_allow_html=True)
+
+else:
+    # 10/10 Empty State
+    st.markdown("""
+    <div style='text-align: center; padding: 60px;'>
+        <h2 style='color: #00e5ff;'>Ready to upgrade your grades?</h2>
+        <p>Upload your PDF in the sidebar to begin the AI transformation.</p>
+        <div style='font-size: 5rem;'>📚</div>
+    </div>
+    """, unsafe_allow_html=True)
