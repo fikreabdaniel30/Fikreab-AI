@@ -154,7 +154,7 @@ if uploaded_file:
         
         with col2:
             if generate_btn:
-                if model:
+                if model = genai.GenerativeModel('gemini-1.5-flash')
                     with st.spinner(f"⏳ Generating {ai_mode}... please wait."):
                         prompts = {
                             "📝 Comprehensive Notes": "Create structured study notes with headers, tables, and explanations.",
@@ -208,5 +208,6 @@ else:
         <div style='font-size: 5rem;'>📚</div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
