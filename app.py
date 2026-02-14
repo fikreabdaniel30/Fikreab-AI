@@ -92,7 +92,6 @@ def get_pdf(text):
     clean_text = text.replace('**', '').replace('#', '').replace('___', '')
     
     # 2. IMPORTANT: Filter out Emojis/Special chars that crash FPDF
-    # This keeps only standard keyboard characters
     safe_text = "".join(i for i in clean_text if ord(i) < 128)
     
     # 3. Write to PDF
@@ -101,11 +100,6 @@ def get_pdf(text):
     
     # 4. Return as bytes
     return pdf.output(dest='S').encode('latin-1', 'ignore')
-    
-    buffer = BytesIO()
-    doc.save(buffer)
-    buffer.seek(0)
-    return buffer
 
 def get_pdf(text):
     """Converts markdown text to a basic PDF file."""
@@ -271,5 +265,6 @@ else:
         <div style='margin-top: 20px; color: #00e5ff;'>Upload PDF → Choose Style → Study Better</div>
     </div>
     """, unsafe_allow_html=True)
+
 
 
