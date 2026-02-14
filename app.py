@@ -82,14 +82,25 @@ st.markdown("""
 
 # --- HELPER FUNCTIONS ---
 
-def get_docx(text):
-    """Converts markdown text to a simplified DOCX file."""
-    doc = Document()
-    doc.add_heading('Fikreab AI Study Notes', 0)
-    clean_text = text.replace('**', '').replace('##', '').replace('#', '')
-    for paragraph in clean_text.split('\n'):
-        if paragraph.strip():
-            doc.add_paragraph(paragraph)
+def get_pdf(text):
+    """Converts markdown text to a PDF while handling special characters safely."""
+    pdf = FPDF()
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # 1. Remove Markdown symbols that look messy in a plain PDF
+    clean_text = text.replace('**', '').replace('#', '').replace('___', '')
+    
+    # 2. IMPORTANT: Filter out Emojis/Special chars that crash FPDF
+    # This keeps only standard keyboard characters
+    safe_text = "".join(i for i in clean_text if ord(i) < 128)
+    
+    # 3. Write to PDF
+    for line in safe_text.split('\n'):
+        pdf.multi_cell(0, 10, txt=line)
+    
+    # 4. Return as bytes
+    return pdf.output(dest='S').encode('latin-1', 'ignore')
     
     buffer = BytesIO()
     doc.save(buffer)
@@ -260,3 +271,4 @@ else:
         <div style='margin-top: 20px; color: #00e5ff;'>Upload PDF → Choose Style → Study Better</div>
     </div>
     """, unsafe_allow_html=True)
+
