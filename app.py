@@ -1,6 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
 from PyPDF2 import PdfReader
+from fpdf import FPDF
 from docx import Document
 from io import BytesIO
 
@@ -251,4 +252,5 @@ else:
         <p style='font-size: 0.8em; color: gray;'>Supports PDF files up to 200MB</p>
     </div>
     """, unsafe_allow_html=True)
+
 
