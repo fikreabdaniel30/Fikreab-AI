@@ -108,13 +108,23 @@ def get_docx(text):
     return buf
 
 def get_pdf(text):
+    """Converts markdown text to a PDF while handling special characters safely."""
     pdf = FPDF()
-    pdf.add_page(); pdf.set_font("Arial", size=12)
-    safe_text = "".join(i for i in text if ord(i) < 128).replace('**', '').replace('#', '')
+    pdf.add_page()
+    pdf.set_font("Arial", size=12)
+    
+    # 1. Remove Markdown symbols
+    clean_text = text.replace('**', '').replace('#', '').replace('___', '')
+    
+    # 2. Filter out Emojis/Special chars that crash FPDF
+    safe_text = "".join(i for i in clean_text if ord(i) < 128)
+    
+    # 3. Write to PDF
     for line in safe_text.split('\n'):
         pdf.multi_cell(0, 10, txt=line)
-    return pdf.output(dest='S').encode('latin-1')
-
+    
+    # 4. Return as bytes
+    return pdf.output(dest='S').encode('latin-1', 'ignore')
 # --- 4. AI ENGINE SETUP ---
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -214,5 +224,6 @@ else:
         <p style='opacity: 0.7;'>Upload a PDF to unlock the ultimate study experience.</p>
     </div>
     """, unsafe_allow_html=True)
+
 
 
