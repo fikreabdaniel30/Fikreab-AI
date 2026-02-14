@@ -53,7 +53,7 @@ def get_pdf(text):
         pdf.multi_cell(0, 10, txt=line)
     return pdf.output(dest='S').encode('latin-1', 'ignore')
 
-## --- 4. AI ENGINE SETUP (SUPER STABLE) ---
+# --- 4. AI ENGINE SETUP (SUPER STABLE) ---
 def initialize_engine():
     if "GEMINI_API_KEY" in st.secrets:
         genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
@@ -86,7 +86,23 @@ with st.sidebar:
     mode = st.selectbox("Goal:", ["📝 Notes", "🎯 Exam Prep", "🗂️ Flashcards"])
     uploaded_file = st.file_uploader("Upload PDF", type="pdf")
 
-# --- 6. SIDEBAR (LOGO, CONFIG & HISTORY) ---
+# --- 6. SIDEBAR (WITH DEBUGGER) ---
+with st.sidebar:
+    st.title("FIKREAB AI")
+    
+    # DEBUGGER: This helps you see if your key is working
+    if target_model_name and "models/" in target_model_name:
+        st.success(f"Connected to: {target_model_name}")
+        model = genai.GenerativeModel(target_model_name)
+    else:
+        st.error(f"Engine Error: {target_model_name}")
+        st.info("Check if your GEMINI_API_KEY in Streamlit Secrets is correct.")
+    
+    st.markdown("---")
+    mode = st.selectbox("Goal:", ["📝 Notes", "🎯 Exam Prep", "🗂️ Flashcards"])
+    uploaded_file = st.file_uploader("Upload PDF", type="pdf")
+
+# --- 7. SIDEBAR (LOGO, CONFIG & HISTORY) ---
 with st.sidebar:
     st.markdown("<div style='text-align: center;'><h1 style='color:#00d2ff;'>FIKREAB AI</h1></div>", unsafe_allow_html=True)
     
@@ -108,7 +124,7 @@ with st.sidebar:
         st.session_state['history'] = []
         st.rerun()
 
-# --- 7. MAIN CONTENT ---
+# --- 8. MAIN CONTENT ---
 st.markdown('<div class="brand-banner"><h1>FIKREAB AI STUDIO</h1><p>The Future of Academic Excellence</p></div>', unsafe_allow_html=True)
 
 if uploaded_file:
@@ -167,4 +183,5 @@ if uploaded_file:
             st.write(q_resp.text)
 else:
     st.info("👋 Welcome! Please upload a PDF in the sidebar to start your session.")
+
 
