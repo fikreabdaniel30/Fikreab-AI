@@ -109,7 +109,7 @@ def get_pdf(text):
 # --- 4. AI CONFIGURATION ---
 if "GEMINI_API_KEY" in st.secrets:
     genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-model = genai.GenerativeModel('gemini-2.5-flash')
+model = genai.GenerativeModel('gemini-2.0-flash')
 
 # --- 5. SIDEBAR & NAVIGATION ---
 with st.sidebar:
@@ -205,3 +205,4 @@ else:
         <div style='font-size: 6rem; margin-top: 20px;'>⚡</div>
     </div>
     """, unsafe_allow_html=True)
+
