@@ -53,11 +53,38 @@ def get_pdf(text):
         pdf.multi_cell(0, 10, txt=line)
     return pdf.output(dest='S').encode('latin-1', 'ignore')
 
-# --- 5. AI ENGINE SETUP ---
-if "GEMINI_API_KEY" in st.secrets:
-    genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
-# Using the specific full path to avoid 404 errors
-model = genai.GenerativeModel('models/gemini-1.5-flash')
+## --- 4. AI ENGINE SETUP (SUPER STABLE) ---
+def initialize_engine():
+    if "GEMINI_API_KEY" in st.secrets:
+        genai.configure(api_key=st.secrets["GEMINI_API_KEY"])
+        try:
+            # This asks Google "What do I actually have access to?"
+            available = [m.name for m in genai.list_models() if 'generateContent' in m.supported_actions]
+            # We pick the best one available automatically
+            for best in ['models/gemini-2.5-flash', 'models/gemini-1.5-flash', 'models/gemini-pro']:
+                if best in available: return best
+            return available[0] # Just pick whatever works
+        except Exception as e:
+            return str(e)
+    return None
+
+target_model_name = initialize_engine()
+
+# --- 5. SIDEBAR (WITH DEBUGGER) ---
+with st.sidebar:
+    st.title("FIKREAB AI")
+    
+    # DEBUGGER: This helps you see if your key is working
+    if target_model_name and "models/" in target_model_name:
+        st.success(f"Connected to: {target_model_name}")
+        model = genai.GenerativeModel(target_model_name)
+    else:
+        st.error(f"Engine Error: {target_model_name}")
+        st.info("Check if your GEMINI_API_KEY in Streamlit Secrets is correct.")
+    
+    st.markdown("---")
+    mode = st.selectbox("Goal:", ["📝 Notes", "🎯 Exam Prep", "🗂️ Flashcards"])
+    uploaded_file = st.file_uploader("Upload PDF", type="pdf")
 
 # --- 6. SIDEBAR (LOGO, CONFIG & HISTORY) ---
 with st.sidebar:
@@ -140,3 +167,4 @@ if uploaded_file:
             st.write(q_resp.text)
 else:
     st.info("👋 Welcome! Please upload a PDF in the sidebar to start your session.")
+
