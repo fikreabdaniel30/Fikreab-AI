@@ -99,7 +99,7 @@ def get_pdf(text):
     return pdf.output(dest='S').encode('latin-1', 'ignore')
 
 # --- 4. AI CONFIG (FIXED FOR 400 & 404 ERRORS) ---
-model = None
+ model = genai.GenerativeModel('gemini-1.5-flash')
 if "GEMINI_API_KEY" in st.secrets:
     try:
         # .strip() handles the "API Key Invalid" Error 400 from your screenshot
@@ -208,3 +208,4 @@ else:
         <div style='font-size: 5rem;'>📚</div>
     </div>
     """, unsafe_allow_html=True)
+
