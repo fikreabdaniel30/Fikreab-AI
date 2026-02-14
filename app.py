@@ -130,7 +130,7 @@ except Exception as e:
     st.error(f"Configuration Error: {e}")
 
 # Stable Gemini 1.5 Model
-model = genai.GenerativeModel('gemini-1.5-flash')
+model = genai.GenerativeModel('gemini-2.5-flash')
 
 # --- SESSION STATE ---
 if 'generated_notes' not in st.session_state:
@@ -271,4 +271,5 @@ else:
         <div style='margin-top: 20px; color: #00e5ff;'>Upload PDF → Choose Style → Study Better</div>
     </div>
     """, unsafe_allow_html=True)
+
 
