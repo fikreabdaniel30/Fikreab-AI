@@ -98,9 +98,8 @@ model = None
 
 if "GEMINI_API_KEY" in st.secrets:
     try:
-        api_key = st.secrets["GEMINI_API_KEY"].strip()
-        genai.configure(AIzaSyBn6UPO8tQ-c0YNUbW7oAG9WGoO2Xfs5_Y)
-
+api_key = st.secrets["GEMINI_API_KEY"].strip()
+genai.configure(api_key=api_key)
         # Auto detect available models
         available_models = [
             m.name for m in genai.list_models()
@@ -271,4 +270,5 @@ else:
         <div style='font-size: 5rem;'>📚</div>
     </div>
     """, unsafe_allow_html=True)
+
 
