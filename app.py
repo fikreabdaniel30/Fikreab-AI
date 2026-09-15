@@ -9,11 +9,9 @@ import google.generativeai as genai
 
 from core import (
     MODES,
-    MODEL_NAME,
     PDFExtractionError,
-    GenerationError,
     extract_text,
-    generate_content,
+    generate_study_material,
     get_docx,
     get_pdf,
 )
@@ -78,19 +76,20 @@ if uploaded_file:
     else:
         st.success(f"✅ Extracted {len(text_content):,} characters. Ready to generate.")
 
-        if st.button("✨ Generate", disabled=model is None):
-            status = st.status("Generating with Gemini...", expanded=False)
-            try:
-                status.write("Sending content to Gemini 1.5 Flash...")
-                output_text = generate_content(model, mode, text_content)
-                status.write("Done.")
-                status.update(label="Generation complete", state="complete")
-
-                st.session_state.output = output_text
-                st.session_state.output_mode = mode
-            except GenerationError as exc:
-                status.update(label="Generation failed", state="error")
-                st.error(f"❌ {exc}")
+      if st.button("✨ Generate"):
+            with st.spinner("Generating with Gemini..."):
+                try:
+                    selected_instructions = MODES[mode]
+                    full_prompt = f"{selected_instructions}\n\nDocument Content:\n{text_content}"
+                    api_key = st.secrets["GEMINI_API_KEY"]
+                    
+                    output_text, model_used = generate_study_material(full_prompt, api_key)
+                    
+                    st.session_state.output = output_text
+                    st.session_state.output_mode = mode
+                    st.success(f"Generated successfully using {model_used}!")
+                except Exception as exc:
+                    st.error(f"❌ {exc}")
 
     if "output" in st.session_state:
         st.markdown("---")
