@@ -74,9 +74,10 @@ if uploaded_file:
             "It may be scanned/image-based — try a text-based PDF instead."
         )
     else:
-        st.success(f"✅ Extracted {len(text_content):,} characters. Ready to generate.")
+else:
+        st.success(f"Extracted {len(text_content):,} characters. Ready to generate.")
 
-      if st.button("✨ Generate"):
+        if st.button("✨ Generate"):
             with st.spinner("Generating with Gemini..."):
                 try:
                     selected_instructions = MODES[mode]
@@ -90,7 +91,6 @@ if uploaded_file:
                     st.success(f"Generated successfully using {model_used}!")
                 except Exception as exc:
                     st.error(f"❌ {exc}")
-
     if "output" in st.session_state:
         st.markdown("---")
         st.subheader(f"Result — {st.session_state.get('output_mode', '')}")
