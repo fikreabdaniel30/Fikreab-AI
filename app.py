@@ -1,4 +1,4 @@
-"""
+
 Fikreab AI | Study Companion
 A Streamlit app that turns uploaded PDFs into notes, flashcards,
 summaries, or exam questions using Google Gemini 1.5 Flash.
@@ -9,7 +9,7 @@ import google.generativeai as genai
 
 from core import (
     MODES,
-    MODEL_NAME,
+    MODEL_NAME = "gemini-1.5-flash"
     PDFExtractionError,
     GenerationError,
     extract_text,
