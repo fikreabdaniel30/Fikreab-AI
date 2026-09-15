@@ -9,7 +9,6 @@ import google.generativeai as genai
 
 from core import (
     MODES,
-    MODEL_NAME = "gemini-1.5-flash"
     PDFExtractionError,
     GenerationError,
     extract_text,
@@ -17,7 +16,7 @@ from core import (
     get_docx,
     get_pdf,
 )
-
+ MODEL_NAME = "gemini-1.5-flash"
 # ---------------- PAGE CONFIG ----------------
 st.set_page_config(
     page_title="Fikreab AI | Study Companion",
