@@ -12,7 +12,7 @@ from PyPDF2 import PdfReader
 from docx import Document
 from fpdf import FPDF
 
-MODEL_NAME = "gemini-1.5-flash-latest"
+MODEL_NAME = "gemini-2.5-flash"
 MAX_CHARS = 30000
 MAX_FILE_SIZE_MB = 15
 FONT_DIR = os.path.join(os.path.dirname(__file__), "fonts")
