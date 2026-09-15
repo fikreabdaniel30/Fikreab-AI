@@ -25,7 +25,7 @@ st.set_page_config(
     layout="wide",
 )
 
-# ---------------- GEMINI SETUP ----------------
+# ------------------ GEMINI SETUP ------------------
 @st.cache_resource
 def load_model():
     """Configure Gemini and return the model instance, or None on failure."""
