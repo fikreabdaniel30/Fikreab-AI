@@ -73,7 +73,6 @@ if uploaded_file:
             "⚠️ No readable text found in this PDF. "
             "It may be scanned/image-based — try a text-based PDF instead."
         )
-    else:
 else:
         st.success(f"Extracted {len(text_content):,} characters. Ready to generate.")
 
