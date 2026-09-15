@@ -90,11 +90,11 @@ else:
                     st.success(f"Generated successfully using {model_used}!")
                 except Exception as exc:
                     st.error(f"❌ {exc}")
-    if "output" in st.session_state:
-        st.markdown("---")
-        st.subheader(f"Result — {st.session_state.get('output_mode', '')}")
-        st.markdown(st.session_state.output)
 
+if "output" in st.session_state:
+    st.markdown("---")
+    st.subheader(f"Result – {st.session_state.get('output_mode', '')}")
+    st.markdown(st.session_state.output)
         docx_buffer = get_docx(st.session_state.output)
         pdf_bytes = get_pdf(st.session_state.output)
 
