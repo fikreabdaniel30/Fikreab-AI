@@ -12,7 +12,39 @@ from PyPDF2 import PdfReader
 from docx import Document
 from fpdf import FPDF
 
-MODEL_NAME = "gemini-3.6-flash"
+import google.generativeai as genai
+
+def get_available_models(api_key):
+    """Fetches all model names supported for text generation from the API."""
+    try:
+        genai.configure(api_key=api_key)
+        available_models = []
+        for m in genai.list_models():
+            if 'generateContent' in m.supported_generation_methods:
+                name = m.name.replace("models/", "")
+                available_models.append(name)
+        return available_models
+    except Exception:
+        return ["gemini-3.6-flash", "gemini-2.0-flash"]
+
+def generate_study_material(prompt_text, api_key):
+    """Dynamically gets available models from Gemini and tries them until one succeeds."""
+    genai.configure(api_key=api_key)
+    candidate_models = get_available_models(api_key)
+    last_error = None
+
+    for model_name in candidate_models:
+        try:
+            model = genai.GenerativeModel(model_name)
+            response = model.generate_content(prompt_text)
+            if response and response.text:
+                return response.text, model_name
+        except Exception as e:
+            last_error = e
+            time.sleep(1)
+            continue
+
+    raise RuntimeError(f"All available model attempts failed. Last error: {str(last_error)}")
 MAX_CHARS = 30000
 MAX_FILE_SIZE_MB = 15
 FONT_DIR = os.path.join(os.path.dirname(__file__), "fonts")
