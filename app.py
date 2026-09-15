@@ -9,7 +9,7 @@ import google.generativeai as genai
 
 from core import (
     MODES,
-    MODEL_NAME,
+    MODEL_NAME = "gemini-1.5-flash"
     PDFExtractionError,
     GenerationError,
     extract_text,
